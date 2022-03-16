@@ -1,0 +1,14 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: core-api
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: integration
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: kong

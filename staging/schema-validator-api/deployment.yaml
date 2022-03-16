@@ -1,0 +1,49 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: schema-validator-api
+  namespace: integration
+spec:
+  replicas: 1
+  strategy:
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 0
+    type: RollingUpdate
+  selector:
+    matchLabels:
+      app: schema-validator-api
+  template:
+    metadata:
+      labels:
+        app: schema-validator-api
+    spec:
+      containers:
+      - image: ssi-registry.teda.th/ssi/vc-schema-repository-api/validator_api/staging:latest
+        imagePullPolicy: Always
+        name: schema-validator-api
+        ports:
+          - name: validator-api
+            containerPort: 8080
+        livenessProbe:
+          tcpSocket:
+            port: 8080
+          initialDelaySeconds: 30
+          timeoutSeconds: 1
+          periodSeconds: 300
+        readinessProbe:
+          tcpSocket:
+            port: 8080
+          initialDelaySeconds: 30
+          timeoutSeconds: 1
+          periodSeconds: 30
+          failureThreshold: 5
+        envFrom:
+          - secretRef:
+              name: sentry-dsn
+        env:
+          - name: PORT
+            value: '8080'
+        resources: {}
+      imagePullSecrets:
+        - name: ssi-registry-secret

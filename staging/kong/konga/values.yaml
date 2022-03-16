@@ -1,0 +1,53 @@
+replicaCount: 1
+
+image:
+  repository: pantsel/konga
+  tag: latest
+  pullPolicy: IfNotPresent
+
+nameOverride: ""
+fullnameOverride: ""
+
+service:
+  type: ClusterIP
+  port: 80
+
+# Konga default configuration
+config: 
+  port: 1337
+  node_env: development
+  konga_hook_timeout: 60000
+  db_adapter: postgres
+  db_host: kong-postgresql
+  db_port: 5432
+  db_user: kong 
+  db_database: kong
+  db_password: kong
+  db_pg_schema: public
+  log_level: info
+
+# LDAP configuration for Konga
+ldap: {}
+
+# Ingress Configuration for Konga
+ingress:
+  enabled: false
+
+  tls: []
+
+resources: {}
+  # limits:
+  #   cpu: 100m
+  #   memory: 128Mi
+  # requests:
+  #   cpu: 100m
+  #   memory: 128Mi
+nodeSelector: {}
+
+tolerations: []
+
+affinity: {}
+
+extraVolumeMounts:
+  - mountPath: /var/lib/mysql
+    name: konga-data

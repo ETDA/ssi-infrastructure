@@ -1,0 +1,80 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app: vc-status
+  name: vc-status
+  namespace: core-api
+spec:
+  progressDeadlineSeconds: 600
+  replicas: 1
+  strategy:
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 0
+    type: RollingUpdate
+  selector:
+    matchLabels:
+      app: vc-status
+  template:
+    metadata:
+      labels:
+        app: vc-status
+    spec:
+      containers:
+      - image: ssi-registry.teda.th/ssi/ssi-core-api/production:latest
+        imagePullPolicy: Always
+        name: vc-status
+        livenessProbe:
+          tcpSocket:
+            port: 8080
+          initialDelaySeconds: 30
+          timeoutSeconds: 1
+          periodSeconds: 300
+        readinessProbe:
+          tcpSocket:
+            port: 8080
+          initialDelaySeconds: 30
+          timeoutSeconds: 1
+          periodSeconds: 30
+          failureThreshold: 5
+        envFrom:
+          - secretRef:
+              name: blockchain-cache
+          - secretRef:
+              name: sentry-dsn
+        env:
+        - name: "TZ"
+          value: "Asia/Bangkok"
+        - name: APP_SERVICE
+          value: VC_STATUS
+        - name: APP_HOST
+          value: :8080
+        - name: APP_ENV
+          value: dev
+        - name: APP_LOG_LEVEL
+          value: debug
+        - name: APP_DB_MONGO_HOST
+          value: blockchain
+        - name: APP_DB_MONGO_PORT
+          value: '27017'
+        - name: APP_DB_MONGO_NAME
+          value: blockchain
+        - name: APP_ABCI_ENDPOINT
+          value: http://blockchain:26657
+        - name: APP_DID_METHOD_DEFAULT
+          value: idin
+        - name: APP_DID_KEY_TYPE_DEFAULT
+          value: EcdsaSecp256r1VerificationKey2019
+        ports:
+        - name: vc-status
+          containerPort: 8080
+        resources:
+          requests:
+            memory: "200Mi"
+            cpu: "200m"
+          limits:
+            memory: "1Gi"
+            cpu: "1"
+      imagePullSecrets:
+        - name: ssi-registry-secret

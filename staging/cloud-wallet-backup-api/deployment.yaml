@@ -1,0 +1,101 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: cloud-wallet-backup-api
+  namespace: integration
+spec:
+  replicas: 1
+  strategy:
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 0
+    type: RollingUpdate
+  selector:
+    matchLabels:
+      app: cloud-wallet-backup-api
+  template:
+    metadata:
+      labels:
+        app: cloud-wallet-backup-api
+    spec:
+      initContainers:
+        - name: cloud-wallet-backup-api-migrate
+          image: ssi-registry.teda.th/ssi/cloud-wallet-backup-api/staging-migrate:latest
+          imagePullPolicy: Always
+          envFrom:
+            - secretRef:
+                name: cloud-wallet-backup-api-db
+          env:
+            - name: APP_DB_DRIVER
+              value: mysql
+            - name: APP_DB_HOST
+              value: cloud-wallet-backup-api-db
+            - name: APP_DB_PORT
+              value: '3306'
+            - name: APP_DB_NAME
+              value: cloud_wallet_backup_api
+      containers:
+      - image: ssi-registry.teda.th/ssi/cloud-wallet-backup-api/staging:latest
+        imagePullPolicy: Always
+        name: cloud-wallet-backup-api
+        ports:
+          - name: cloud-api
+            containerPort: 8080
+        livenessProbe:
+          tcpSocket:
+            port: 8080
+          initialDelaySeconds: 30
+          timeoutSeconds: 1
+          periodSeconds: 300
+        readinessProbe:
+          tcpSocket:
+            port: 8080
+          initialDelaySeconds: 30
+          timeoutSeconds: 1
+          periodSeconds: 30
+          failureThreshold: 5
+        envFrom:
+          - secretRef:
+              name: cloud-wallet-backup-api-db
+          - secretRef:
+              name: sentry-dsn
+        env:
+          - name: APP_HOST
+            value: :8080
+          - name: APP_ENV
+            value: dev
+          - name: APP_LOG_LEVEL
+            value: debug
+          - name: APP_DB_DRIVER
+            value: mysql
+          - name: APP_DB_HOST
+            value: cloud-wallet-backup-api-db
+          - name: APP_DB_PORT
+            value: '3306'
+          - name: APP_DB_NAME
+            value: cloud_wallet_backup_api
+          - name : APP_DID_SERVICE_BASE_URL
+            value: http://did.core-api.svc
+          - name: APP_VC_STATUS_SERVICE_BASE_URL
+            value: http://vc-status.core-api.svc
+          - name: APP_RSA_PRIVATE_KEY_FILE
+            value: "/key/private_key.pem"
+          - name: APP_HSM_PIN
+            value: "547235"
+          - name: APP_HSM_SLOT
+            value: "8"
+        volumeMounts:
+          - name: cloud-wallet-backup-api
+            mountPath: /key/private_key.pem
+            subPath: private_key.pem
+        resources: {}
+      volumes:
+        - name: cloud-wallet-backup-api
+          secret:
+            secretName: cloud-wallet-backup-api
+            items:
+              - key: private_key.pem
+                path: private_key.pem
+            defaultMode: 0400
+      imagePullSecrets:
+        - name: ssi-registry-secret
