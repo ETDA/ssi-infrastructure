@@ -82,3 +82,4 @@ spec:
                 name: web-portal
                 port:
                   number: 80
+                  
