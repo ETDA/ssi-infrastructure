@@ -3,3 +3,4 @@ secret.yaml
 cert-secret.yml
 registry-secret.yml
 sentry-secret.yml
+production/
